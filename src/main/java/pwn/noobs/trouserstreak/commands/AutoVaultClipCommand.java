@@ -6,6 +6,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
+import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.util.math.BlockPos;
@@ -15,7 +16,7 @@ import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class AutoVaultClipCommand extends Command {
     public AutoVaultClipCommand() {
-        super("autovaultclip", "Clips vertically with vault bypass and zero fall damage. Works best on Paper/Spigot.");
+        super("autovaultclip", "Ultimate vertical clip with vault bypass and zero fall damage. Paper/Spigot recommended.");
     }
 
     @Override
@@ -29,12 +30,11 @@ public class AutoVaultClipCommand extends Command {
         builder.then(literal("up").executes(ctx -> {
             ClientPlayerEntity player = mc.player;
             assert player != null;
-
             for (int i = 0; i < 199; i++) {
-                BlockPos gap1 = player.getBlockPos().add(0, i + 2, 0);
-                BlockPos gap2 = player.getBlockPos().add(0, i + 3, 0);
-                if (isSafe(gap1) && isSafe(gap2)) {
-                    teleportAndReset(gap1.getY());
+                BlockPos a = player.getBlockPos().add(0, i + 2, 0);
+                BlockPos b = player.getBlockPos().add(0, i + 3, 0);
+                if (isSafe(a) && isSafe(b)) {
+                    executeClip(a.getY());
                     return SINGLE_SUCCESS;
                 }
             }
@@ -46,12 +46,11 @@ public class AutoVaultClipCommand extends Command {
         builder.then(literal("down").executes(ctx -> {
             ClientPlayerEntity player = mc.player;
             assert player != null;
-
             for (int i = -1; i > -199; i--) {
-                BlockPos gap1 = player.getBlockPos().add(0, i, 0);
-                BlockPos gap2 = player.getBlockPos().add(0, i - 1, 0);
-                if (isSafe(gap1) && isSafe(gap2)) {
-                    teleportAndReset(gap2.getY());
+                BlockPos a = player.getBlockPos().add(0, i, 0);
+                BlockPos b = player.getBlockPos().add(0, i - 1, 0);
+                if (isSafe(a) && isSafe(b)) {
+                    executeClip(b.getY());
                     return SINGLE_SUCCESS;
                 }
             }
@@ -63,12 +62,11 @@ public class AutoVaultClipCommand extends Command {
         builder.then(literal("highest").executes(ctx -> {
             ClientPlayerEntity player = mc.player;
             assert player != null;
-
             for (int i = 199; i > 0; i--) {
                 BlockPos below = player.getBlockPos().add(0, i, 0);
-                BlockPos above = below.up(1);
+                BlockPos above = below.up();
                 if (!isSafe(below) || !mc.world.getFluidState(below).isEmpty()) {
-                    teleportAndReset(above.getY());
+                    executeClip(above.getY());
                     return SINGLE_SUCCESS;
                 }
             }
@@ -77,48 +75,59 @@ public class AutoVaultClipCommand extends Command {
         }));
     }
 
-    // Teleport player (and vehicle) to targetY, then send position packets to nullify fall damage
-    private void teleportAndReset(double targetY) {
+    /**
+     * Performs the teleport, resets fall state, and floods packets to cancel fall damage.
+     */
+    private void executeClip(double targetY) {
         ClientPlayerEntity player = mc.player;
         assert player != null;
 
-        // Vehicle movement
+        // Vehicle bypass
         if (player.hasVehicle()) {
-            Entity vehicle = player.getVehicle();
-            for (int j = 0; j < 19; j++) {
-                mc.player.networkHandler.sendPacket(VehicleMoveC2SPacket.fromVehicle(vehicle));
-            }
-            vehicle.setPosition(vehicle.getX(), targetY, vehicle.getZ());
+            Entity veh = player.getVehicle();
+            for (int i = 0; i < 19; i++) mc.player.networkHandler.sendPacket(VehicleMoveC2SPacket.fromVehicle(veh));
+            veh.setPosition(veh.getX(), targetY, veh.getZ());
         }
 
-        // Client teleport
-        player.setPosition(player.getX(), targetY, player.getZ());
+        // Teleport client
+        player.updatePosition(player.getX(), targetY, player.getZ());
         player.fallDistance = 0;
+        player.setVelocity(0, 0, 0);
 
-        // Send a position packet to server, then a burst of on-ground packets
+        // Send initial false onGround to register movement
         mc.player.networkHandler.sendPacket(
             new PlayerMoveC2SPacket.PositionAndOnGround(
-                player.getX(),
-                player.getY(),
-                player.getZ(),
-                false,
-                player.horizontalCollision
+                player.getX(), player.getY(), player.getZ(), false, player.horizontalCollision
             )
         );
-        for (int k = 0; k < 20; k++) {
+
+        // Micro-oscillations to reset server fall calculations
+        for (int i = 0; i < 100; i++) sendMicroMovement();
+
+        // Final on-ground confirmations
+        for (int i = 0; i < 20; i++) {
             mc.player.networkHandler.sendPacket(
-                new PlayerMoveC2SPacket.PositionAndOnGround(
-                    player.getX(),
-                    player.getY(),
-                    player.getZ(),
-                    true,
-                    player.horizontalCollision
-                )
+                new PlayerMoveC2SPacket.OnGroundOnly(true, player.horizontalCollision)
             );
         }
+
+        // Optional sprint packet to solidify state
+        mc.player.networkHandler.sendPacket(new ClientCommandC2SPacket(player, ClientCommandC2SPacket.Mode.START_SPRINTING));
     }
 
-    // Checks for replaceable, empty, and not powder snow
+    /**
+     * Sends tiny up-down movement packets to trick the server into thinking we've landed.
+     */
+    private void sendMicroMovement() {
+        double x = mc.player.getX(), y = mc.player.getY(), z = mc.player.getZ();
+        mc.player.networkHandler.sendPacket(
+            new PlayerMoveC2SPacket.PositionAndOnGround(x, y - 1e-6, z, true, mc.player.horizontalCollision)
+        );
+        mc.player.networkHandler.sendPacket(
+            new PlayerMoveC2SPacket.PositionAndOnGround(x, y + 1e-6, z, false, mc.player.horizontalCollision)
+        );
+    }
+
     private boolean isSafe(BlockPos pos) {
         return mc.world.getBlockState(pos).isReplaceable()
             && mc.world.getFluidState(pos).isEmpty()
