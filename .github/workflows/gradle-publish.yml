@@ -27,7 +27,7 @@ jobs:
         run: ./gradlew build --no-daemon
 
       - name: Upload JAR artifact
-        uses: actions/upload-artifact@latest
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: macekill-module
           path: |
