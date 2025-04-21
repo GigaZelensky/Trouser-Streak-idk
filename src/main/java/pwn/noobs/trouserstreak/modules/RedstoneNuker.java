@@ -571,13 +571,13 @@ public class RedstoneNuker extends Module {
         }
         Item item = itemStack.getItem();
         if (itemStack.isIn(ItemTags.SWORDS) && (state.getBlock() instanceof BambooBlock || state.getBlock() instanceof BambooShootBlock))
-        score += 9000 + (item.getComponents().get(DataComponentTypes.TOOL).getSpeed(state) * 1000);
+            score += 9000 + (item.getComponents().get(DataComponentTypes.TOOL).getSpeed(state) * 1000);
 
         return score;
     }
 
     public static boolean isTool(ItemStack itemStack) {
-        return itemStack.isIn(ItemTags.AXES) || itemStack.isIn(ItemTags.HOES) || itemStack.isIn(ItemTags.PICKAXES) || itemStack.isIn(ItemTags.SHOVELS) || itemStack.getItem() instanceof ShearsItem;
+        return itemStack.getComponents().contains(DataComponentTypes.TOOL) || itemStack.getItem() instanceof ShearsItem;
     }
     private boolean filterBlocks(Block block) {
         return isRedstoneBlock(block);

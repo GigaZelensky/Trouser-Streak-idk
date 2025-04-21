@@ -36,12 +36,12 @@ import pwn.noobs.trouserstreak.Trouser;
 public class AutoStaircase extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
     private final Setting<Double> view = sgGeneral.add(new DoubleSetting.Builder()
-        .name("ViewAngle")
-        .description("Angle of your view")
-        .defaultValue(1)
-        .min(0.1)
-        .sliderMax(30)
-        .build());
+            .name("ViewAngle")
+            .description("Angle of your view")
+            .defaultValue(1)
+            .min(0.1)
+            .sliderMax(30)
+            .build());
     private final Setting<Integer> limit = sgGeneral.add(new IntSetting.Builder()
             .name("Build Limit")
             .description("sets the height at which the stairs stop")
@@ -95,12 +95,12 @@ public class AutoStaircase extends Module {
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
         if (mc.player == null || mc.world == null) {toggle(); return;}
-            if (mc.player.getMainHandStack().getItem() instanceof BlockItem) {
-                resetTimer = false;
-                Modules.get().get(Timer.class).setOverride(StairTimer.get());
-            } else if (!resetTimer) {
-                resetTimer = true;
-                Modules.get().get(Timer.class).setOverride(Timer.OFF);
+        if (mc.player.getMainHandStack().getItem() instanceof BlockItem) {
+            resetTimer = false;
+            Modules.get().get(Timer.class).setOverride(StairTimer.get());
+        } else if (!resetTimer) {
+            resetTimer = true;
+            Modules.get().get(Timer.class).setOverride(Timer.OFF);
         }
         if (mc.player.getMainHandStack().isEmpty()) {
             mc.options.forwardKey.setPressed(false);

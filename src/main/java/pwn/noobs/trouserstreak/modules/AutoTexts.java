@@ -202,13 +202,9 @@ public class AutoTexts extends Module {
 
     private NbtComponent createEntityData(Vec3d pos) {
         NbtCompound entityTag = new NbtCompound();
-
-        String selectedText = texts.get().get(random.nextInt(texts.get().size()));
-        NbtCompound customName = new NbtCompound();
-        customName.putString("text", selectedText);
-        customName.putString("color", namecolour);
-
         NbtList position = new NbtList();
+        String selectedText = texts.get().get(random.nextInt(texts.get().size()));
+
         position.add(NbtDouble.of(pos.x));
         position.add(NbtDouble.of(pos.y));
         position.add(NbtDouble.of(pos.z));
@@ -219,7 +215,7 @@ public class AutoTexts extends Module {
         entityTag.putBoolean("Marker", true);
         entityTag.putBoolean("NoGravity", true);
         entityTag.putBoolean("CustomNameVisible", true);
-        entityTag.put("CustomName", customName);
+        entityTag.putString("CustomName", "{\"text\":\"" + selectedText + "\",\"color\":\"" + namecolour + "\"}");
 
         return NbtComponent.of(entityTag);
     }

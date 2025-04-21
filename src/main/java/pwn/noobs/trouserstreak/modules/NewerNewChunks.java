@@ -21,13 +21,13 @@ import net.minecraft.block.Blocks;
 import net.minecraft.client.gui.screen.DisconnectedScreen;
 import net.minecraft.client.gui.screen.DownloadingTerrainScreen;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.c2s.play.AcknowledgeChunksC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.*;
-import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeKeys;
@@ -679,14 +679,8 @@ public class NewerNewChunks extends Module {
 			if (mc.world.getChunkManager().getChunk(packet.getChunkX(), packet.getChunkZ()) == null) {
 				WorldChunk chunk = new WorldChunk(mc.world, oldpos);
 				try {
-					Map<Heightmap.Type, long[]> heightmaps = new EnumMap<>(Heightmap.Type.class);
-
-					Heightmap.Type type = Heightmap.Type.MOTION_BLOCKING;
-					long[] emptyHeightmapData = new long[37];
-					heightmaps.put(type, emptyHeightmapData);
-
 					CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-						chunk.loadFromPacket(packet.getChunkData().getSectionsDataBuf(), heightmaps,
+						chunk.loadFromPacket(packet.getChunkData().getSectionsDataBuf(), new NbtCompound(),
 								packet.getChunkData().getBlockEntities(packet.getChunkX(), packet.getChunkZ()));
 					}, taskExecutor);
 					future.join();

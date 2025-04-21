@@ -267,9 +267,9 @@ public class AdvancedItemESP extends Module {
             baseColor = getOpposingColor(baseColor, entity);
         }
 
-        double x = entity.lastX + (entity.getX() - entity.lastX) * event.tickDelta;
-        double y = entity.lastY + (entity.getY() - entity.lastY) * event.tickDelta;
-        double z = entity.lastZ + (entity.getZ() - entity.lastZ) * event.tickDelta;
+        double x = entity.prevX + (entity.getX() - entity.prevX) * event.tickDelta;
+        double y = entity.prevY + (entity.getY() - entity.prevY) * event.tickDelta;
+        double z = entity.prevZ + (entity.getZ() - entity.prevZ) * event.tickDelta;
         double height = entity.getBoundingBox().maxY - entity.getBoundingBox().minY;
         y += height / 2;
 

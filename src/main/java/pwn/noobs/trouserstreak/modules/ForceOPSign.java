@@ -8,7 +8,6 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.client.network.ServerInfo;
 import net.minecraft.component.ComponentChanges;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
@@ -18,7 +17,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.server.integrated.IntegratedServer;
 import pwn.noobs.trouserstreak.Trouser;
 
 import java.util.ArrayList;
@@ -208,7 +206,7 @@ public class ForceOPSign extends Module {
     public ForceOPSign() {
         super(Trouser.operator, "ForceOPSign", "Requires Creative mode! Creates a ClickEvent sign in your inventory. Give it to someone with OP who is also in creative mode and have them place then click the sign.");
     }
-    String serverVersion;
+
     @Override
     public void onActivate() {
         if (mc.player == null) return;
@@ -317,120 +315,46 @@ public class ForceOPSign extends Module {
                 commandValue4 = commandValue4.substring(1);
             } else commandValue4 = thecommand4.get();
         }
-        if (autoCompat.get()){
-            if (mc.isIntegratedServerRunning()) {
-                serverVersion = mc.getServer().getVersion();
-            } else {
-                serverVersion = mc.getCurrentServerEntry().version.getLiteralString();
-            }
 
-            if (serverVersion == null) {
-                error("Version could not be read. Using Version Compatibility setting instead...");
-                if (compatmode.get() == compatModes.LatestVersion){
-                    clickEvent1.putString("action", "run_command");
-                    clickEvent1.putString("command", commandValue1);
-                    clickEvent2.putString("action", "run_command");
-                    clickEvent2.putString("command", commandValue2);
-                    clickEvent3.putString("action", "run_command");
-                    clickEvent3.putString("command", commandValue3);
-                    clickEvent4.putString("action", "run_command");
-                    clickEvent4.putString("command", commandValue4);
-                    firstLine.put("click_event", clickEvent1);
-                    secondLine.put("click_event", clickEvent2);
-                    thirdLine.put("click_event", clickEvent3);
-                    fourthLine.put("click_event", clickEvent4);
-                } else {
-                    clickEvent1.putString("action", "run_command");
-                    clickEvent1.putString("value", commandValue1);
-                    clickEvent2.putString("action", "run_command");
-                    clickEvent2.putString("value", commandValue2);
-                    clickEvent3.putString("action", "run_command");
-                    clickEvent3.putString("value", commandValue3);
-                    clickEvent4.putString("action", "run_command");
-                    clickEvent4.putString("value", commandValue4);
-                    firstLine.put("clickEvent", clickEvent1);
-                    secondLine.put("clickEvent", clickEvent2);
-                    thirdLine.put("clickEvent", clickEvent3);
-                    fourthLine.put("clickEvent", clickEvent4);
-                }
-            } else {
-                if (serverVersion.contains("1.21.5")){
-                    clickEvent1.putString("action", "run_command");
-                    clickEvent1.putString("command", commandValue1);
-                    clickEvent2.putString("action", "run_command");
-                    clickEvent2.putString("command", commandValue2);
-                    clickEvent3.putString("action", "run_command");
-                    clickEvent3.putString("command", commandValue3);
-                    clickEvent4.putString("action", "run_command");
-                    clickEvent4.putString("command", commandValue4);
-                    firstLine.put("click_event", clickEvent1);
-                    secondLine.put("click_event", clickEvent2);
-                    thirdLine.put("click_event", clickEvent3);
-                    fourthLine.put("click_event", clickEvent4);
-                } else {
-                    clickEvent1.putString("action", "run_command");
-                    clickEvent1.putString("value", commandValue1);
-                    clickEvent2.putString("action", "run_command");
-                    clickEvent2.putString("value", commandValue2);
-                    clickEvent3.putString("action", "run_command");
-                    clickEvent3.putString("value", commandValue3);
-                    clickEvent4.putString("action", "run_command");
-                    clickEvent4.putString("value", commandValue4);
-                    firstLine.put("clickEvent", clickEvent1);
-                    secondLine.put("clickEvent", clickEvent2);
-                    thirdLine.put("clickEvent", clickEvent3);
-                    fourthLine.put("clickEvent", clickEvent4);
-                }
-            }
-        } else {
-            if (compatmode.get() == compatModes.LatestVersion){
-                clickEvent1.putString("action", "run_command");
-                clickEvent1.putString("command", commandValue1);
-                clickEvent2.putString("action", "run_command");
-                clickEvent2.putString("command", commandValue2);
-                clickEvent3.putString("action", "run_command");
-                clickEvent3.putString("command", commandValue3);
-                clickEvent4.putString("action", "run_command");
-                clickEvent4.putString("command", commandValue4);
-                firstLine.put("click_event", clickEvent1);
-                secondLine.put("click_event", clickEvent2);
-                thirdLine.put("click_event", clickEvent3);
-                fourthLine.put("click_event", clickEvent4);
-            } else {
-                clickEvent1.putString("action", "run_command");
-                clickEvent1.putString("value", commandValue1);
-                clickEvent2.putString("action", "run_command");
-                clickEvent2.putString("value", commandValue2);
-                clickEvent3.putString("action", "run_command");
-                clickEvent3.putString("value", commandValue3);
-                clickEvent4.putString("action", "run_command");
-                clickEvent4.putString("value", commandValue4);
-                firstLine.put("clickEvent", clickEvent1);
-                secondLine.put("clickEvent", clickEvent2);
-                thirdLine.put("clickEvent", clickEvent3);
-                fourthLine.put("clickEvent", clickEvent4);
-            }
-        }
+        clickEvent1.putString("action", "run_command");
+        clickEvent1.putString("value", commandValue1);
+        clickEvent2.putString("action", "run_command");
+        clickEvent2.putString("value", commandValue2);
+        clickEvent3.putString("action", "run_command");
+        clickEvent3.putString("value", commandValue3);
+        clickEvent4.putString("action", "run_command");
+        clickEvent4.putString("value", commandValue4);
+        firstLine.put("clickEvent", clickEvent1);
+        secondLine.put("clickEvent", clickEvent2);
+        thirdLine.put("clickEvent", clickEvent3);
+        fourthLine.put("clickEvent", clickEvent4);
 
-        messages.add(firstLine);
-        messages.add(secondLine);
-        messages.add(thirdLine);
-        messages.add(fourthLine);
+        messages.add(NbtString.of(firstLine.toString()));
+        messages.add(NbtString.of(secondLine.toString()));
+        messages.add(NbtString.of(thirdLine.toString()));
+        messages.add(NbtString.of(fourthLine.toString()));
 
         text.put("messages", messages);
         text2.put("messages", messages);
         blockEntityTag.put("front_text", text);
         blockEntityTag.put("back_text", text2);
         if (autoCompat.get()){
+            String serverVersion;
+            if (mc.isIntegratedServerRunning()) {
+                serverVersion = mc.getServer().getVersion();
+            } else {
+                serverVersion = mc.getCurrentServerEntry().version.getLiteralString();
+            }
             if (serverVersion == null) {
-                if (compatmode.get() == compatModes.LatestVersion || compatmode.get() == compatModes.v1_21_4)blockEntityTag.putString("id", "minecraft:sign");
+                error("Version could not be read. Using Version Compatibility setting instead...");
+                if (compatmode.get() == compatModes.LatestVersion)blockEntityTag.putString("id", "minecraft:sign");
                 else blockEntityTag.putString("id", "minecraft:oak_sign");
             } else {
-                if (serverVersion.contains("1.21.5") || serverVersion.contains("1.21.4"))blockEntityTag.putString("id", "minecraft:sign");
+                if (serverVersion.contains("1.21.4"))blockEntityTag.putString("id", "minecraft:sign");
                 else blockEntityTag.putString("id", "minecraft:oak_sign");
             }
         } else {
-            if (compatmode.get() == compatModes.LatestVersion || compatmode.get() == compatModes.v1_21_4)blockEntityTag.putString("id", "minecraft:sign");
+            if (compatmode.get() == compatModes.LatestVersion)blockEntityTag.putString("id", "minecraft:sign");
             else blockEntityTag.putString("id", "minecraft:oak_sign");
         }
 
@@ -452,6 +376,6 @@ public class ForceOPSign extends Module {
         ForceOP, CloneSign, AnyCommand
     }
     public enum compatModes {
-        LatestVersion, v1_21_4, lessThan1_21_4
+        LatestVersion, lessThan1_21_4
     }
 }

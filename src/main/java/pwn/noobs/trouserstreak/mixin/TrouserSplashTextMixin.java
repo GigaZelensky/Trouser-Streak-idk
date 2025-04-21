@@ -49,9 +49,7 @@ public class TrouserSplashTextMixin {
                 "The floor is lava, the roof is lava, Everything is lava.",
                 "If at first you don't succeed, just use more TNT.",
                 "If at first you don't succeed, grief, grief again",
-                "Stop and take time to smell the explosions.",
-                "fdrgeafqrRESGJTURYKJRTDSRGHR!!!!!!",
-                "ehuewifgewiudhyiewqiofyhfliuweqgfouiwq3tgodiwayghfeoiewhjikhlewhfwkuagfdlalihbflo;sdl;pihfehw083yr0328whefoiwuy3prhfjewoiyufhildwshiofc"
+                "Stop and take time to smell the explosions."
         );
     }
 }

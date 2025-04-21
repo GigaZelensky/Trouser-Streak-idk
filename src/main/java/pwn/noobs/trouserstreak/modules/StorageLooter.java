@@ -205,7 +205,7 @@ public class StorageLooter extends Module {
                     Items.DIAMOND_LEGGINGS,
                     Items.DIAMOND_BOOTS,
                     Items.SHULKER_BOX
-                    ))
+            ))
             .filter(this::isValidLootItem)
             .build()
     );
@@ -415,7 +415,7 @@ public class StorageLooter extends Module {
                 if (entity.getBlockPos().equals(lastInteractedBlockPos) && entity instanceof ChestMinecartEntity && containerList.get().contains(Items.CHEST_MINECART)) {
                     if (mc.player.currentScreenHandler != null && isContainerScreen(mc.player.currentScreenHandler)) {
                         if (autoStealTicks == 0) {
-                        processContainerItems();
+                            processContainerItems();
                         }
                         if (autoStealTicks<autoStealDelay.get()) {
                             autoStealTicks++;
@@ -483,7 +483,7 @@ public class StorageLooter extends Module {
     private boolean hasEnoughFreeSlots() {
         assert mc.player != null;
         int freeSlots = 0;
-        for (ItemStack stack : mc.player.getInventory()) {
+        for (ItemStack stack : mc.player.getInventory().main) {
             if (stack.isEmpty()) {
                 freeSlots++;
             }
@@ -958,7 +958,7 @@ public class StorageLooter extends Module {
         assert mc.player != null;
         int count = 0;
         String itemName = item.toString().toLowerCase();
-        for (ItemStack stack : mc.player.getInventory()) {
+        for (ItemStack stack : mc.player.getInventory().main) {
             if (isSameItem(stack.getItem(), item, itemName)) {
                 count += stack.getCount();
             }
@@ -1049,7 +1049,7 @@ public class StorageLooter extends Module {
         int count = 0;
         String itemName = item.toString().toLowerCase();
 
-        for (ItemStack stack : mc.player.getInventory()) {
+        for (ItemStack stack : mc.player.getInventory().main) {
             Item stackItem = stack.getItem();
             if (isSameItem(stackItem, item, itemName)) {
                 if (stack.isStackable()) {

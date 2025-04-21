@@ -20,6 +20,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,8 +29,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class TextCommand extends Command {
@@ -108,54 +107,41 @@ public class TextCommand extends Command {
         String[] lines = text.split("\\|");
         for (int i = lines.length - 1; i >= 0; i--) {
             String line = lines[i].trim();
-            NbtList nbt = formatTextWithColors(line);
+            String formattedText = formatTextWithColors(line);
             double heightOffset = ((lines.length - 1 - i) * LINE_SPACING) + INITIAL_HEIGHT_OFFSET;
-            spawnText(nbt, heightOffset);
+            spawnText(formattedText, heightOffset, true);
         }
     }
 
-    private NbtList formatTextWithColors(String line) {
-        NbtList nbt = new NbtList();
+    private String formatTextWithColors(String line) {
+        StringBuilder formattedText = new StringBuilder();
         String currentColor = "white";
-        boolean wasObfuscated = false;
+        boolean isObfuscated = false;
+        String[] words = line.split(" ");
 
-        Pattern pattern = Pattern.compile("#([a-zA-Z_]+) ");
-        Matcher matcher = pattern.matcher(line);
-
-        int offset = 0;
-
-        while (matcher.find()) {
-            if (offset != matcher.start())
-                nbt.add(makePart(line.substring(offset, matcher.start()), currentColor, false, wasObfuscated));
-
-            String word = matcher.group(1);
-            if (word.equalsIgnoreCase("obfuscated")) {
-                offset = matcher.end();
-
-                int end = line.substring(offset).indexOf(" ") + 1;
-                nbt.add(makePart(line.substring(offset, offset + end), currentColor, true, wasObfuscated));
-
-                wasObfuscated = true;
-                offset += end;
+        for (String word : words) {
+            if (word.startsWith("#")) {
+                if (word.equalsIgnoreCase("#obfuscated")) {
+                    isObfuscated = true;
+                } else {
+                    try {
+                        currentColor = word.substring(1).toLowerCase();
+                    } catch (IllegalArgumentException ignored) {
+                        formattedText.append(word).append(" ");
+                    }
+                }
             } else {
-                currentColor = word;
-                offset = matcher.end();
+                formattedText.append("{\"text\":\"").append(word).append(" \",\"color\":\"")
+                        .append(currentColor).append("\"");
+                if (isObfuscated) {
+                    formattedText.append(",\"obfuscated\":true");
+                }
+                formattedText.append("},");
+                isObfuscated = false; // Reset obfuscation after each word
             }
         }
 
-        if (offset != line.length())
-            nbt.add(makePart(line.substring(offset), currentColor, false, wasObfuscated));
-
-        return nbt;
-    }
-
-    private NbtCompound makePart(String text, String color, boolean obfuscated, boolean wasObfuscated) {
-        NbtCompound part = new NbtCompound();
-        part.putString("text", text);
-        part.putString("color", color);
-        if (obfuscated && !wasObfuscated) part.putBoolean("obfuscated", true);
-        if (!obfuscated && wasObfuscated) part.putBoolean("obfuscated", false);
-        return part;
+        return "[" + formattedText.substring(0, formattedText.length() - 1) + "]";
     }
 
     private void savePreset(String presetName, String text) {
@@ -252,7 +238,7 @@ public class TextCommand extends Command {
         }
     }
 
-    private void spawnText(NbtList nbt, double yOffset) {
+    private void spawnText(String message, double yOffset, boolean isJson) {
         if (!mc.player.getAbilities().creativeMode) {
             error("Creative mode required!");
             return;
@@ -263,7 +249,7 @@ public class TextCommand extends Command {
         Vec3d pos = mc.player.getPos().add(mc.player.getRotationVector().multiply(2)).add(0, yOffset, 0);
 
         var changes = ComponentChanges.builder()
-                .add(DataComponentTypes.ENTITY_DATA, createEntityData(pos, nbt))
+                .add(DataComponentTypes.ENTITY_DATA, createEntityData(pos, message, isJson))
                 .build();
 
         armorStand.applyChanges(changes);
@@ -274,10 +260,10 @@ public class TextCommand extends Command {
         mc.interactionManager.clickCreativeStack(current, 36 + mc.player.getInventory().selectedSlot);
     }
 
-    private NbtComponent createEntityData(Vec3d pos, NbtList nbt) {
+    private NbtComponent createEntityData(Vec3d pos, String text, boolean isJson) {
         NbtCompound entityTag = new NbtCompound();
-
         NbtList position = new NbtList();
+
         position.add(NbtDouble.of(pos.x));
         position.add(NbtDouble.of(pos.y));
         position.add(NbtDouble.of(pos.z));
@@ -288,7 +274,7 @@ public class TextCommand extends Command {
         entityTag.putBoolean("Marker", true);
         entityTag.putBoolean("NoGravity", true);
         entityTag.putBoolean("CustomNameVisible", true);
-        entityTag.put("CustomName", nbt);
+        entityTag.putString("CustomName", isJson ? text : "{\"text\":\"" + text + "\"}");
 
         return NbtComponent.of(entityTag);
     }
