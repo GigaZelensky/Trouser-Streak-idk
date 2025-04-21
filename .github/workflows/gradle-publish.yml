@@ -26,6 +26,13 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build --no-daemon
 
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macekill-module
+          path: |
+            **/build/libs/*.jar
+
   publish:
     runs-on: ubuntu-latest
     needs: build
@@ -47,5 +54,4 @@ jobs:
       - name: Publish to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ./gradlew publish --no-daemon
+        run: ./gradlew publish --no-daemon
