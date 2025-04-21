@@ -16,7 +16,7 @@ import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class AutoVaultClipCommand extends Command {
     public AutoVaultClipCommand() {
-        super("autovaultclip", "Ultimate vertical clip with vault bypass and zero fall damage via segmentation.");
+        super("autovaultclip", "Auto vault clip with robust velocity injections to prevent fall damage.");
     }
 
     @Override
@@ -25,82 +25,66 @@ public class AutoVaultClipCommand extends Command {
             error("Choose Up, Down or Highest");
             return SINGLE_SUCCESS;
         });
-
-        builder.then(literal("up").executes(ctx -> handleClip(getGapY(1))));
-        builder.then(literal("down").executes(ctx -> handleClip(getGapY(-1))));
-        builder.then(literal("highest").executes(ctx -> handleClip(getHighestY())));
+        builder.then(literal("up").executes(ctx -> clipWithVelocity(getGapY(1))));
+        builder.then(literal("down").executes(ctx -> clipWithVelocity(getGapY(-1))));
+        builder.then(literal("highest").executes(ctx -> clipWithVelocity(getHighestY())));
     }
 
-    // Main handler that executes the clip at the desired Y
-    private int handleClip(double targetY) {
-        ClientPlayerEntity player = mc.player;
-        assert player != null;
-
-        double startY = player.getY();
-        if (targetY >= startY) {
-            // Up or level: direct teleport
-            performDirectClip(targetY);
-        } else {
-            // Down: segment into safe falls
-            performSegmentedClip(startY, targetY);
-        }
-
-        return SINGLE_SUCCESS;
-    }
-
-    // Splits the downward drop into small safe segments (<3 blocks)
-    private void performSegmentedClip(double startY, double targetY) {
-        double segmentSize = 2.8; // safe max fall
-        double distance = startY - targetY;
-        int parts = (int) Math.ceil(distance / segmentSize);
-
-        for (int i = 1; i <= parts; i++) {
-            double nextY = startY - Math.min(segmentSize * i, distance);
-            performDirectClip(nextY);
-        }
-    }
-
-    // Teleports player (and vehicle) and resets fall state
-    private void performDirectClip(double y) {
+    // Teleport + upward-velocity injection
+    private int clipWithVelocity(double targetY) {
         ClientPlayerEntity player = mc.player;
         assert player != null;
 
         double x = player.getX();
         double z = player.getZ();
+        // place slightly inside the gap
+        double safeY = targetY + 0.5;
 
-        // Vehicle bypass
+        // vault clip bypass packets
         if (player.hasVehicle()) {
-            Entity veh = player.getVehicle();
-            for (int i = 0; i < 19; i++) {
-                mc.player.networkHandler.sendPacket(VehicleMoveC2SPacket.fromVehicle(veh));
-            }
-            veh.setPosition(x, y, z);
+            Entity v = player.getVehicle();
+            for (int i = 0; i < 19; i++) 
+                mc.player.networkHandler.sendPacket(VehicleMoveC2SPacket.fromVehicle(v));
+            v.setPosition(x, safeY, z);
         }
 
-        // Teleport client
-        player.updatePosition(x, y, z);
+        // client teleport
+        player.setPosition(x, safeY, z);
         player.fallDistance = 0;
         player.setVelocity(0, 0, 0);
 
-        // Send on-ground packet to server
+        // notify server of teleport
         mc.player.networkHandler.sendPacket(
-            new PlayerMoveC2SPacket.PositionAndOnGround(x, y, z, true, player.horizontalCollision)
+            new PlayerMoveC2SPacket.PositionAndOnGround(x, safeY, z, false, player.horizontalCollision)
         );
 
-        // Optional sprint packet to finalize state
+        // hammer out any fall distance with repeated micro-jumps
+        for (int i = 0; i < 50; i++) {
+            player.setVelocity(0, 0.1, 0);
+            player.fallDistance = 0;
+            mc.player.networkHandler.sendPacket(
+                new PlayerMoveC2SPacket.PositionAndOnGround(x, safeY + 0.1, z, false, player.horizontalCollision)
+            );
+            mc.player.networkHandler.sendPacket(
+                new PlayerMoveC2SPacket.PositionAndOnGround(x, safeY,   z, true,  player.horizontalCollision)
+            );
+        }
+
+        // finalize as on-ground
         mc.player.networkHandler.sendPacket(
             new ClientCommandC2SPacket(player, ClientCommandC2SPacket.Mode.START_SPRINTING)
         );
+
+        return SINGLE_SUCCESS;
     }
 
-    // Finds the first safe gap for up/down scans (direction=1 for up, -1 for down)
-    private double getGapY(int direction) {
-        ClientPlayerEntity player = mc.player;
-        assert player != null;
-        BlockPos pos = player.getBlockPos();
+    // find a two-block gap above (dir=1) or below (dir=-1)
+    private double getGapY(int dir) {
+        ClientPlayerEntity p = mc.player;
+        assert p != null;
+        BlockPos pos = p.getBlockPos();
         int range = 199;
-
-        if (direction > 0) {
+        if (dir > 0) {
             for (int i = 0; i < range; i++) {
                 BlockPos a = pos.add(0, i + 2, 0);
                 BlockPos b = pos.add(0, i + 3, 0);
@@ -114,25 +98,23 @@ public class AutoVaultClipCommand extends Command {
             }
         }
         error("No gap found to vclip into");
-        return player.getY();
+        return p.getY();
     }
 
-    // Finds highest teleport Y above
+    // find highest block above
     private double getHighestY() {
-        ClientPlayerEntity player = mc.player;
-        assert player != null;
-        BlockPos pos = player.getBlockPos();
-
+        ClientPlayerEntity p = mc.player;
+        assert p != null;
+        BlockPos pos = p.getBlockPos();
         for (int i = 199; i > 0; i--) {
-            BlockPos below = pos.add(0, i, 0);
-            BlockPos above = below.up();
-            if (!isSafe(below) || !mc.world.getFluidState(below).isEmpty()) return above.getY();
+            BlockPos down = pos.add(0, i, 0);
+            BlockPos up   = down.up();
+            if (!isSafe(down) || !mc.world.getFluidState(down).isEmpty()) return up.getY();
         }
         error("No blocks above you found!");
-        return player.getY();
+        return p.getY();
     }
 
-    // Safety check: gap must be two-block tall of air
     private boolean isSafe(BlockPos p) {
         return mc.world.getBlockState(p).isReplaceable()
             && mc.world.getFluidState(p).isEmpty()
