@@ -103,6 +103,7 @@ public class Trouser extends MeteorAddon {
                 Commands.add(new ViewNbtCommand());
                 Commands.add(new AutoVclipCommand());
                 Commands.add(new AutoVaultClipCommand());
+                Commands.add(new SmartClipCommand());
                 Modules.get().add(new BlockListMineCommand());
                 Commands.add(new GarbageCleanerCommand());
 
